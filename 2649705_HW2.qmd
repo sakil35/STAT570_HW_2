@@ -1,0 +1,224 @@
+---
+title: "STAT570_HW2"
+author: Sercan Akıl
+number: 2649705
+format: html
+editor: visual
+---
+
+## 17.4.3 Intervals
+
+In the lubridate package in R, years represents a duration of 1 "decimal" year, and days represents a duration of 365 days. When you divide years by days, the result will not be exactly 1 because of the consideration of the average lenght of a year, which is 365.25 days. This consideration of 365.25 days in a year is due to the inclusion of leap years, which have an extra day. The adjustment helps in handling the variations in the length of a year over time, accounting for extra day added in a leap year to keep our calendars in sync with the EARTH' orbit around the sun.
+
+So, dyears(1) / ddays(365) returns 1.00274. This reflects the adjustment for the fact that a year is on average 365.25 days long.
+
+```{r, warning=FALSE}
+
+library(tidyverse)
+library(lubridate)
+years(1) / days(1)
+
+```
+
+If you want to a more accurate measuerements, we will be using an interval. This approach is useful when you need to work with date ranges or durations in your analysis, allowing for more precise calculations and comparisons between different time periods.
+
+The breakdown of code;
+
+```         
+ymd("2023-01-01"): This function from the lubridate package is used to parse dates in the "year-month-day" format. It converts the specified date string into a date object.  
+
+%--%: This is the interval operator in the lubridate package. It creates an interval between two date objects.  y2023 <- ymd("2023-01-01")
+
+%--% ymd("2024-01-01"): This line creates an interval named y2023 starting from January 1, 2023, and ending on January 1, 2024. 
+
+y2024 <- ymd("2024-01-01") %--% ymd("2025-01-01"): Similarly, this line creates an interval named y2024 for the year 2024. 
+```
+
+```{r, warning=FALSE}
+{y2023 <- ymd("2023-01-01") %--% ymd("2024-01-01")}
+y2024 <- ymd("2024-01-01") %--% ymd("2025-01-01")
+
+y2023
+#> [1] 2023-01-01 UTC--2024-01-01 UTC
+y2024
+#> [1] 2024-01-01 UTC--2025-01-01 UTC
+
+#>seq(ymd("2023-01-01"), ymd("2024-01-01"), "days")
+```
+
+Additionally, the lubridate packages in R allows you to perform operations like division on intervals and durations.
+
+```{r, warning=FALSE}
+{y2023 / days(1)}
+#> [1] 365
+y2024 / days(1)
+#> [1] 366
+#seq(ymd("2024-01-01"), ymd("2025-01-01"), "days")
+```
+
+# 
+
+**17.4.4 Exercises**
+
+1.  Explain `days(!overnight)` and `days(overnight)` to someone who has just started learning R. What is the key fact you need to know?
+
+```         
+These expressions involve the use of the negation (!) operator. In R, the key fact to know is that ! is the logical NOT operator. When applied to a logical vector, it negates each element of the vector.
+
+So, days(!overnight) would be interpreted as "the number of days that are not overnight," and days(overnight) would be "the number of days that are overnight." These could be used in a context where overnight is a logical vector indicating whether each day is overnight or not.
+```
+
+2.  Create a vector of dates giving the first day of every month in 2015. Create a vector of dates giving the first day of every month in the *current* year. To create a vector of dates for the first day of every month in a specific year, you can use the seq function. Here's an example for 2015 and the current year:
+
+```{r, warning=FALSE}
+
+dates_2015 <- seq(as.Date("2015-01-01"), as.Date("2015-12-01"), by = "month")
+
+# For the current year
+current_year <- as.integer(format(Sys.Date(), "%Y"))
+dates_current_year <- seq(as.Date(paste(current_year, "-01-01", sep = "")), 
+                          as.Date(paste(current_year, "-12-01", sep = "")), 
+                          by = "month")
+
+dates_current_year
+```
+
+3.  Write a function to calculate age in years given a birthday: Here's an example function:
+
+```{r, warning=FALSE}
+library(lubridate)
+#birthday <- as.Date("1990-05-15")
+#age <- calculate_age(birthday)
+#print(paste("You are", age, "years old."))
+
+```
+
+4.  Why can't (today() %--% (today() + years(1))) / months(1) work?
+
+    The reason this doesn't work is that (today() %--% (today() + years(1))) creates an interval object representing the span of one year, and dividing it by months(1) tries to divide the interval by the duration of one month. However, the division of an interval by a duration is not well-defined in this context. If you want to get the number of months in the interval, you should use the length function instead:
+
+```{r, warning=FALSE}
+{interval <- today() %--% (today() + years(1))}
+num_months <- length(interval)
+
+num_months
+```
+
+This will give you the number of months in the interval, which makes more sense in this context.
+
+**17.5 Time Zones**
+
+ **Lubridate always uses UTC (Coordinated Universal Time)**
+
+tz refers timezone in the chunk.
+
+1.  This passage provides a comprehensive overview of how time zones work in R, particularly with the lubridate package. Let's summarize the key points:
+
+2.  IANA Time Zones: R uses the international standard IANA time zones, which are named consistently as {area}/{location} (e.g., "America/New_York", "Europe/Paris"). This naming scheme helps avoid ambiguity, especially when dealing with countries or regions sharing the same time zone abbreviation.
+
+3.  Time Zone Database Complexity: The IANA database records decades worth of time zone rules, and using cities in the naming convention helps maintain consistency despite geopolitical changes. The database reflects both current and historical time zone rules.
+
+4.  Sys.timezone() and OlsonNames(): Sys.timezone() returns the current time zone in R, and OlsonNames() provides a list of all time zone names available in the Olson database.
+
+This is very crucial to find system time zone because if you use international model for monitoring natural disaster you should know what system zone your computer is using such as Greenwich Mean Time Zone and Central European Time. You can find out what R thinks your current time zone is with [`Sys.timezone()`](https://rdrr.io/r/base/timezones.html)
+
+Visualize the Time Zone
+
+```{r,warning=FALSE}
+library(ggplot2)
+library(sf) 
+#world <- st_read(system.file("C:/Users/sakil/Desktop/Shapefiles/ne_10m_admin_0_countries.shp", package = "rnaturalearth")) 
+#time_zones <- data.frame( zone = c("UTC+12", "UTC+11", "UTC+10", "UTC+9", "UTC+8")
+#lon = c(180, 165, 150, 135, 120)
+#lat = c(0, 0, 0, 0, 0)
+#world_time_zones <- merge(world, time_zones, by.x = "iso_a3", by.y = "zone", all.x = TRUE)
+# ggplot() + geom_sf(data = world_time_zones, aes(fill = zone), color = "white") + scale_fill_manual(values = c("UTC+12" = "red", "UTC+11" = "blue", "UTC+10" = "green", "UTC+9" = "yellow", "UTC+8" = "orange")) + theme_void()
+
+```
+
+```{r, warning=FALSE}
+Sys.timezone()
+```
+
+And see the complete list of all time zone names with [`OlsonNames()`](https://rdrr.io/r/base/timezones.html):
+
+```{r}
+length(OlsonNames())
+#> [1] 597
+head(OlsonNames())
+#> [1] "Africa/Abidjan"     "Africa/Accra"       "Africa/Addis_Ababa"
+#> [4] "Africa/Algiers"     "Africa/Asmara"      "Africa/Asmera"
+```
+
+In R, the time zone is an attribute of the date-time that only controls printing. For example, these three objects represent the same instant in time:
+
+```{r, warning=FALSE}
+x1 <- ymd_hms("2024-06-01 12:00:00", tz = "America/New_York")
+x1
+#> [1] "2024-06-01 12:00:00 EDT"
+
+x2 <- ymd_hms("2024-06-01 18:00:00", tz = "Europe/Copenhagen")
+x2
+#> [1] "2024-06-01 18:00:00 CEST"
+
+x3 <- ymd_hms("2024-06-02 04:00:00", tz = "Pacific/Auckland")
+x3
+#> [1] "2024-06-02 04:00:00 NZST"
+
+```
+
+EDT means= Eastern Time Zone
+
+CEST means= Central European Summer Time
+
+NZST means= New Zealand Standard Time
+
+```{r, warning=FALSE}
+x1 - x2
+#> Time difference of 0 secs
+x1 - x3
+#> Time difference of 0 secs
+```
+
+Operations that combine date-times, like [`c()`](https://rdrr.io/r/base/c.html), will often drop the time zone. In that case, the date-times will display in the time zone of the first element:
+
+```{r, warning=FALSE}
+x4 <- c(x1, x2, x3)
+x4
+#> [1] "2024-06-01 12:00:00 EDT" "2024-06-01 12:00:00 EDT"
+#> [3] "2024-06-01 12:00:00 EDT"
+
+```
+
+If you want to change timezone, we can do in two ways:
+
+a-) The values are not all integer hour offsets.
+
+```{r, warning=FALSE}
+x4a <- with_tz(x4, tzone = "Australia/Lord_Howe")
+x4a
+#> [1] "2024-06-02 02:30:00 +1030" "2024-06-02 02:30:00 +1030"
+#> [3] "2024-06-02 02:30:00 +1030"
+x4a - x4
+#> Time differences in secs
+#> [1] 0 0 0
+
+```
+
+b-) Underlying instant in time has been labelled with the incorrect time zone.
+
+```{r}
+x4b <- force_tz(x4, tzone = "Australia/Lord_Howe")
+x4b
+#> [1] "2024-06-01 12:00:00 +1030" "2024-06-01 12:00:00 +1030"
+#> [3] "2024-06-01 12:00:00 +1030"
+x4b - x4
+#> Time differences in hours
+#> [1] -14.5 -14.5 -14.5
+```
+
+**17.6 Summary**
+
+Lubridate for handling date-time data is useful. As the chapter highlights, working with dates and times can be more complex than it initially seems, given the variety of situations that may arise, such as daylight savings boundaries and leap years.
+
+The upcoming chapter on missing values will likely provide you with valuable techniques for handling another common challenge in data analysis. Dealing with missing data is a crucial aspect of the data analysis process, and having a variety of tools and techniques to handle missing values will enhance ability to derive meaningful insights from your datasets.
